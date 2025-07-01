@@ -120,10 +120,14 @@ EOL'
 sudo systemctl daemon-reload
 sudo systemctl enable popcache
 
-# Done!
+# Start the POP Node after installation
+sudo systemctl start popcache
+
+# Final output
 echo ""
 echo "✅ Pipe POP Node installation complete!"
-echo "👉 You can edit your config file at: /opt/popcache/config.json"
-echo "👉 Start your node: sudo systemctl start popcache"
-echo "👉 View live logs: tail -f /opt/popcache/logs/stdout.log"
-echo "👉 Check status: sudo systemctl status popcache"
+echo "🚀 Node has been started."
+echo "👉 To check status:       sudo systemctl status popcache"
+echo "👉 To view live logs:     tail -f /opt/popcache/logs/stdout.log"
+echo "👉 To view health:        curl http://localhost/health"
+echo "👉 To check node ID:      curl -s http://localhost/state | jq '.pop_id'"
