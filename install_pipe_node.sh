@@ -1,19 +1,29 @@
 #!/bin/bash
 
-# Hỏi thông tin người dùng nhập vào
-read -p "📛 Nhập tên POP Node (pop_name): " POP_NAME
-read -p "🌍 Nhập vị trí địa lý (pop_location): " POP_LOCATION
-read -p "📨 Nhập Invite Code: " INVITE_CODE
-read -p "📦 Nhập RAM dành cho cache (MB): " CACHE_RAM
-read -p "💾 Nhập dung lượng cache đĩa (GB): " CACHE_DISK
-read -p "🔑 Nhập Solana ví nhận thưởng: " SOLANA_PUBKEY
+echo ""
+echo "🛠️  Bắt đầu cài đặt Pipe POP Node (v0.3.2)"
+echo "📖 Một số lưu ý:"
+echo " - RAM cache nên để 50–70% tổng RAM (VD: VPS 8GB RAM → nhập 4096–6144)"
+echo " - Dung lượng cache ổ đĩa nên để 60–80% dung lượng còn trống"
+echo " - Các thông tin cá nhân giúp bạn nhận thưởng từ hệ thống Pipe"
+echo ""
+
+read -p "📛 Nhập tên POP Node (ví dụ: toanmb-node-1): " POP_NAME
+read -p "🌍 Nhập vị trí địa lý (ví dụ: Frankfurt, Germany): " POP_LOCATION
+read -p "📨 Nhập Invite Code (được cấp qua email): " INVITE_CODE
+
+echo ""
+read -p "📦 RAM dành cho cache (MB) [Gợi ý: 4096–8192]: " CACHE_RAM
+read -p "💾 Dung lượng cache đĩa (GB) [Gợi ý: 100–300]: " CACHE_DISK
+
+echo ""
+read -p "🔑 Nhập ví Solana để nhận thưởng: " SOLANA_PUBKEY
 read -p "👤 Tên người đại diện: " YOUR_NAME
 read -p "📧 Email liên hệ: " YOUR_EMAIL
 
 # Cài đặt gói cần thiết và tối ưu mạng
 sudo apt update -y && sudo apt install -y libssl-dev ca-certificates curl net-tools
 
-# Tối ưu cấu hình mạng
 sudo bash -c 'cat > /etc/sysctl.d/99-popcache.conf << EOL
 net.ipv4.ip_local_port_range = 1024 65535
 net.core.somaxconn = 65535
@@ -28,13 +38,13 @@ net.core.rmem_max = 16777216
 EOL'
 sudo sysctl -p /etc/sysctl.d/99-popcache.conf
 
-# Giới hạn file descriptor
+# Tăng giới hạn file descriptor
 sudo bash -c 'cat > /etc/security/limits.d/popcache.conf << EOL
 * hard nofile 65535
 * soft nofile 65535
 EOL'
 
-# Tạo user và thư mục cài node
+# Tạo user và thư mục
 sudo useradd -m popcache || true
 sudo mkdir -p /opt/popcache/logs
 cd /opt/popcache
@@ -45,7 +55,7 @@ tar -xzf pop.tar.gz
 chmod +x pop
 sudo chown -R popcache:popcache /opt/popcache
 
-# Tạo file cấu hình config.json
+# Tạo file cấu hình
 cat > /opt/popcache/config.json <<EOF
 {
   "pop_name": "$POP_NAME",
@@ -104,15 +114,12 @@ Environment=POP_CONFIG_PATH=/opt/popcache/config.json
 WantedBy=multi-user.target
 EOL'
 
-# Kích hoạt dịch vụ
+# Kích hoạt service
 sudo systemctl daemon-reload
 sudo systemctl enable popcache
 
-# Hướng dẫn tiếp theo
 echo ""
-echo "✅ Đã hoàn tất cài đặt POP Node!"
-echo "👉 Kiểm tra và chỉnh lại file nếu cần: sudo nano /opt/popcache/config.json"
-echo "👉 Khi sẵn sàng, chạy lệnh sau để khởi động node:"
-echo "   sudo systemctl start popcache"
-echo "👉 Kiểm tra trạng thái node:"
-echo "   sudo systemctl status popcache"
+echo "✅ Đã cài đặt xong Pipe POP Node!"
+echo "👉 Kiểm tra file config: sudo nano /opt/popcache/config.json"
+echo "👉 Khi sẵn sàng, chạy: sudo systemctl start popcache"
+echo "👉 Xem log: tail -f /opt/popcache/logs/stdout.log"
