@@ -1,29 +1,31 @@
 #!/bin/bash
 
 echo ""
-echo "🛠️  Bắt đầu cài đặt Pipe POP Node (v0.3.2)"
-echo "📖 Một số lưu ý:"
-echo " - RAM cache nên để 50–70% tổng RAM (VD: VPS 8GB RAM → nhập 4096–6144)"
-echo " - Dung lượng cache ổ đĩa nên để 60–80% dung lượng còn trống"
-echo " - Các thông tin cá nhân giúp bạn nhận thưởng từ hệ thống Pipe"
+echo "🛠️ Starting Pipe POP Node Installation (v0.3.2)"
+echo "📖 Please read carefully before proceeding:"
+echo " - Recommended RAM for cache: 50–70% of total system RAM (e.g., 8GB => 4096–6144 MB)"
+echo " - Recommended disk space for cache: 60–80% of available space"
+echo " - Your identity info and wallet will be used for dashboard display and rewards"
 echo ""
 
-read -p "📛 Nhập tên POP Node (ví dụ: toanmb-node-1): " POP_NAME
-read -p "🌍 Nhập vị trí địa lý (ví dụ: Frankfurt, Germany): " POP_LOCATION
-read -p "📨 Nhập Invite Code (được cấp qua email): " INVITE_CODE
+# Prompting user for configuration input
+read -p "📛 Enter POP Node name (e.g., toanmb-node-1): " POP_NAME
+read -p "🌍 Enter location (e.g., Frankfurt, Germany): " POP_LOCATION
+read -p "📨 Enter your Invite Code (from Pipe Network): " INVITE_CODE
 
 echo ""
-read -p "📦 RAM dành cho cache (MB) [Gợi ý: 4096–8192]: " CACHE_RAM
-read -p "💾 Dung lượng cache đĩa (GB) [Gợi ý: 100–300]: " CACHE_DISK
+read -p "📦 Enter RAM for cache in MB [Recommended: 4096–8192]: " CACHE_RAM
+read -p "💾 Enter disk cache size in GB [Recommended: 100–300]: " CACHE_DISK
 
 echo ""
-read -p "🔑 Nhập ví Solana để nhận thưởng: " SOLANA_PUBKEY
-read -p "👤 Tên người đại diện: " YOUR_NAME
-read -p "📧 Email liên hệ: " YOUR_EMAIL
+read -p "🔑 Enter your Solana wallet address (for receiving rewards): " SOLANA_PUBKEY
+read -p "👤 Enter your name (will appear on dashboard): " YOUR_NAME
+read -p "📧 Enter your email address: " YOUR_EMAIL
 
-# Cài đặt gói cần thiết và tối ưu mạng
+# Update system and install dependencies
 sudo apt update -y && sudo apt install -y libssl-dev ca-certificates curl net-tools
 
+# Optimize kernel parameters for high-performance networking
 sudo bash -c 'cat > /etc/sysctl.d/99-popcache.conf << EOL
 net.ipv4.ip_local_port_range = 1024 65535
 net.core.somaxconn = 65535
@@ -38,24 +40,24 @@ net.core.rmem_max = 16777216
 EOL'
 sudo sysctl -p /etc/sysctl.d/99-popcache.conf
 
-# Tăng giới hạn file descriptor
+# Increase file descriptor limits
 sudo bash -c 'cat > /etc/security/limits.d/popcache.conf << EOL
 * hard nofile 65535
 * soft nofile 65535
 EOL'
 
-# Tạo user và thư mục
+# Create user and working directory
 sudo useradd -m popcache || true
 sudo mkdir -p /opt/popcache/logs
 cd /opt/popcache
 
-# Tải POP node
+# Download and extract POP binary
 wget https://download.pipe.network/static/pop-v0.3.2-linux-x64.tar.gz -O pop.tar.gz
 tar -xzf pop.tar.gz
 chmod +x pop
 sudo chown -R popcache:popcache /opt/popcache
 
-# Tạo file cấu hình
+# Generate config.json based on user input
 cat > /opt/popcache/config.json <<EOF
 {
   "pop_name": "$POP_NAME",
@@ -91,7 +93,7 @@ cat > /opt/popcache/config.json <<EOF
 }
 EOF
 
-# Tạo systemd service
+# Create systemd service for managing the node
 sudo bash -c 'cat > /etc/systemd/system/popcache.service << EOL
 [Unit]
 Description=POP Cache Node
@@ -114,12 +116,14 @@ Environment=POP_CONFIG_PATH=/opt/popcache/config.json
 WantedBy=multi-user.target
 EOL'
 
-# Kích hoạt service
+# Reload systemd and enable service on boot
 sudo systemctl daemon-reload
 sudo systemctl enable popcache
 
+# Done!
 echo ""
-echo "✅ Đã cài đặt xong Pipe POP Node!"
-echo "👉 Kiểm tra file config: sudo nano /opt/popcache/config.json"
-echo "👉 Khi sẵn sàng, chạy: sudo systemctl start popcache"
-echo "👉 Xem log: tail -f /opt/popcache/logs/stdout.log"
+echo "✅ Pipe POP Node installation complete!"
+echo "👉 You can edit your config file at: /opt/popcache/config.json"
+echo "👉 Start your node: sudo systemctl start popcache"
+echo "👉 View live logs: tail -f /opt/popcache/logs/stdout.log"
+echo "👉 Check status: sudo systemctl status popcache"
